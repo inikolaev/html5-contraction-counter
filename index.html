@@ -1,0 +1,203 @@
+
+<html>
+    <head>
+        <title>Contraction Counter</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <link rel="apple-touch-icon" href="scan-app-ios-icon-1024x1024.png">
+        <link rel="manifest" href="manifest.json">
+        <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                position: relative;
+            }
+
+            #button {
+                -webkit-appearance:none;
+                border-radius: 0;
+                box-sizing: content-box;
+                display: block;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                padding: 0;
+                background-color: #2196f3;
+                border: 0;
+                text-transform: uppercase;
+                font-size: 16px;
+                font-weight: normal;
+                color: #FFF;
+                line-height: 5em;
+                outline: none;
+            }
+
+            #button.button--started {
+                background-color: red;
+            }
+
+            #history-container {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+            }
+
+            #history {
+                padding-bottom: 5em;
+            }
+
+            #history > div {
+                font-family: Roboto;
+                font-size: 1.5em;
+                line-height: 2em;
+                border-bottom: 1px solid #EEE;
+                overflow: hidden;
+            }
+
+            #history > div > div {
+                width: 50%;
+                float: left;
+                padding: 10px;
+                box-sizing: border-box;
+            }
+
+            #history > div > div.right {
+                width: 50%;
+                float: left;
+                text-align: right;
+            }
+
+            #timer-container {
+                display: none;
+                position: absolute;
+                background-color: #FFF;
+                left: 0;
+                top: 0;
+                right: 0;
+                bottom: 5em;
+            }
+
+            #timer-container.timer--visible {
+                display: block;
+            }
+
+            #timer {
+                font-size: 8em;
+                text-align: center;
+            }
+
+            @media screen and (min-device-width: 481px) and (orientation: landscape){
+                body {
+                    width: 480px;
+                    margin: 0 auto;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="history-container">
+            <div id="history"></div>
+        </div>
+        <div id="timer-container">
+            <div id="timer"></div>
+        </div>
+        <button id="button">Start</button>
+        <script>
+            window.addEventListener("DOMContentLoaded", function() {
+                var contractions = [];
+                var started = false;
+                var startTime = null;
+                var stopTime = null;
+                var timer = null;
+
+                var button = document.getElementById("button");
+
+                button.addEventListener("click", function() {
+                    if (started) {
+                        started = false;
+                        stopTime = new Date();
+                        button.textContent = "Start";
+                        button.classList.remove("button--started")
+
+                        stopTimer();
+                        addContraction({start: startTime, stop: stopTime});
+                    } else {
+                        started = true;
+                        startTime = new Date();
+                        stopTime = null;
+                        button.textContent = "Stop";
+                        button.classList.add("button--started")
+                        startTimer();
+                    }
+                });
+
+                function addContraction(contraction) {
+                    contractions.push(contraction);
+
+                    var entry = document.createElement("div");
+                    var left = document.createElement("div");
+                    var right = document.createElement("div");
+                    right.classList.add("right");
+
+                    left.textContent = time(contraction.start);
+                    right.textContent = duration(contraction);
+
+                    entry.appendChild(left);
+                    entry.appendChild(right);
+
+                    var history = document.getElementById("history");
+                    history.insertBefore(entry, history.firstChild);
+                }
+
+                function duration(contraction) {
+                    var d = contraction.stop.getTime() - contraction.start.getTime();
+
+                    var minutes = Math.floor(d / 60000);
+                    var seconds = Math.floor((d - (minutes * 60000)) / 1000);
+
+                    if (seconds < 10) seconds = "0" + seconds;
+
+                    return minutes + ":" + seconds;
+                }
+
+                function time(date) {
+                    var hours = date.getHours();
+                    var minutes = date.getMinutes();
+                    var seconds = date.getSeconds();
+
+                    if (hours < 10) hours = "0" + hours;
+                    if (minutes < 10) minutes = "0" + minutes;
+                    if (seconds < 10) seconds = "0" + seconds; 
+
+                    return hours + ":" + minutes + ":" + seconds;
+                }
+
+                function startTimer() {
+                    var timerContainer = document.getElementById("timer-container");
+                    timerContainer.classList.add("timer--visible");
+
+                    var timerElement = document.getElementById("timer");
+                    timerElement.textContent = "0:00";
+
+                    clearInterval(timer);
+                    timer = setInterval(function() {
+                        timerElement.textContent = duration({start: startTime, stop: new Date()})
+                    }, 1000);
+                }
+
+                function stopTimer() {
+                    var timerContainer = document.getElementById("timer-container");
+                    timerContainer.classList.remove("timer--visible");
+                    clearInterval(timer);
+                }
+            });
+        </script>
+    </body>
+</html>
