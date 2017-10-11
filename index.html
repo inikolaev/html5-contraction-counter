@@ -91,6 +91,24 @@
                 text-align: center;
                 font-family: Roboto;
             }
+
+            #doctor {
+                display: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                font-size: 1.5em;
+                background-color: red;
+                font-family: Roboto;
+                color: #fff;
+                line-height: 3em;
+                text-align: center;
+            }
+
+            #doctor.doctor--visible {
+                display: block;
+            }            
         </style>
     </head>
     <body>
@@ -100,6 +118,7 @@
         <div id="timer-container">
             <div id="timer"></div>
         </div>
+        <div id="doctor">It's time to visit a doctor!</div>
         <button id="button">Start</button>
         <script>
             window.addEventListener("DOMContentLoaded", function() {
@@ -120,6 +139,7 @@
 
                         stopTimer();
                         addContraction({start: startTime, stop: stopTime});
+                        checkContractions()
                     } else {
                         started = true;
                         startTime = new Date();
@@ -139,7 +159,7 @@
                     right.classList.add("right");
 
                     left.textContent = time(contraction.start);
-                    right.textContent = duration(contraction);
+                    right.textContent = durationToString(contraction);
 
                     entry.appendChild(left);
                     entry.appendChild(right);
@@ -148,8 +168,43 @@
                     history.insertBefore(entry, history.firstChild);
                 }
 
+                function checkContractions() {
+                    var length = contractions.length;
+                    var lastContractions = contractions.slice(length - 5);
+
+                    if (lastContractions.length == 5) {
+                        var longDuration = lastContractions.every(function(contraction) {
+                            return duration(contraction) > 40000;
+                        });
+
+                        var highFrequency = lastContractions.every(function(contraction, i, contractions) {
+                            if (i == 4) return true;
+
+                            var current = contraction;
+                            var next = contractions[i + 1];
+                            var duration = Math.floor((current.stop.getTime() - next.start.getTime()) / 60000);
+                            return duration < 10;
+                        });
+
+                        var visitDoctor = longDuration & highFrequency;
+
+                        if (visitDoctor) {
+                            var doctor = document.getElementById("doctor");
+                            doctor.classList.add("doctor--visible");
+
+                            setTimeout(function() {
+                                doctor.classList.remove("doctor--visible");
+                            }, 10000);
+                        }
+                    }
+                }
+
                 function duration(contraction) {
-                    var d = contraction.stop.getTime() - contraction.start.getTime();
+                    return contraction.stop.getTime() - contraction.start.getTime();
+                }
+
+                function durationToString(contraction) {
+                    var d = duration(contraction);
 
                     var minutes = Math.floor(d / 60000);
                     var seconds = Math.floor((d - (minutes * 60000)) / 1000);
@@ -180,7 +235,7 @@
 
                     clearInterval(timer);
                     timer = setInterval(function() {
-                        timerElement.textContent = duration({start: startTime, stop: new Date()})
+                        timerElement.textContent = durationToString({start: startTime, stop: new Date()})
                     }, 1000);
                 }
 
